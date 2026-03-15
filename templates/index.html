@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Python Calculator</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #020617;
+            --accent: #38bdf8;
+            --accent-soft: rgba(56, 189, 248, 0.15);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --danger: #f97373;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --shadow-xl: 0 30px 80px rgba(15, 23, 42, 0.9);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.18), transparent 55%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.18), transparent 55%),
+                radial-gradient(circle at 0% 100%, rgba(16, 185, 129, 0.18), transparent 45%),
+                linear-gradient(145deg, #020617, #020617 45%, #020617);
+            color: var(--text);
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 380px;
+            background: radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.14), transparent 55%)
+                        border-box,
+                        radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.16), transparent 55%)
+                        border-box,
+                        var(--card);
+            border-radius: 32px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: var(--shadow-xl);
+            padding: 20px 18px 18px;
+            backdrop-filter: blur(18px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.18), transparent 55%),
+                radial-gradient(circle at 100% 100%, rgba(129, 140, 248, 0.16), transparent 55%);
+            opacity: 0.35;
+            mix-blend-mode: soft-light;
+            pointer-events: none;
+        }
+
+        .shell-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .shell-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #4b5563;
+        }
+
+        .dot:nth-child(1) { background: #ef4444; }
+        .dot:nth-child(2) { background: #f59e0b; }
+        .dot:nth-child(3) { background: #22c55e; }
+
+        .shell-title {
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            text-align: right;
+        }
+
+        .device {
+            background: radial-gradient(circle at 0 0, rgba(148, 163, 184, 0.05), transparent 55%);
+            border-radius: 28px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            padding: 16px 16px 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .device::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(135deg, rgba(56, 189, 248, 0.06), transparent 60%),
+                radial-gradient(circle at 100% 0, rgba(168, 85, 247, 0.08), transparent 55%);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .screen {
+            position: relative;
+            border-radius: var(--radius-lg);
+            background:
+                radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.26), transparent 55%),
+                radial-gradient(circle at 100% 0, rgba(168, 85, 247, 0.12), transparent 65%),
+                linear-gradient(160deg, #020617, #020617 45%, #020617);
+            padding: 14px 14px 12px;
+            margin-bottom: 16px;
+            box-shadow: inset 0 0 0 0.5px rgba(148, 163, 184, 0.35);
+        }
+
+        .screen-label {
+            font-size: 11px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.9);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pill {
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 10px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            background: rgba(15, 23, 42, 0.7);
+            color: rgba(209, 213, 219, 0.9);
+        }
+
+        .expression {
+            min-height: 24px;
+            font-size: 13px;
+            color: rgba(156, 163, 175, 0.9);
+            text-align: right;
+            margin-bottom: 2px;
+            word-break: break-all;
+        }
+
+        .result {
+            font-size: 24px;
+            line-height: 1.1;
+            font-weight: 550;
+            text-align: right;
+            color: var(--accent);
+            text-shadow: 0 0 24px rgba(56, 189, 248, 0.55);
+        }
+
+        .result span {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            display: inline-block;
+            margin-right: 6px;
+            color: rgba(148, 163, 184, 0.85);
+        }
+
+        .error {
+            margin-top: 8px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(248, 113, 113, 0.6);
+            background: radial-gradient(circle at 0 0, rgba(248, 113, 113, 0.18), transparent 55%);
+            color: #fecaca;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .error-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--danger);
+            box-shadow: 0 0 12px rgba(248, 113, 113, 0.9);
+        }
+
+        form {
+            position: relative;
+            z-index: 1;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        label {
+            font-size: 11px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.9);
+        }
+
+        .input-shell {
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            background: rgba(15, 23, 42, 0.92);
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-shell span {
+            font-size: 11px;
+            color: rgba(148, 163, 184, 0.9);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        input::placeholder {
+            color: rgba(107, 114, 128, 0.9);
+        }
+
+        select {
+            width: 100%;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            background: rgba(15, 23, 42, 0.95);
+            color: var(--text);
+            padding: 8px 10px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .submit-row {
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hint {
+            font-size: 11px;
+            color: rgba(148, 163, 184, 0.9);
+        }
+
+        .hint span {
+            font-weight: 500;
+            color: rgba(248, 250, 252, 0.9);
+        }
+
+        button[type="submit"] {
+            border: none;
+            border-radius: 999px;
+            padding: 9px 18px;
+            font-size: 13px;
+            font-weight: 550;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            cursor: pointer;
+            color: #0f172a;
+            background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.9), transparent 55%),
+                        linear-gradient(135deg, #38bdf8, #818cf8);
+            box-shadow:
+                0 12px 30px rgba(56, 189, 248, 0.6),
+                0 0 0 0 rgba(56, 189, 248, 0.0);
+            transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+            white-space: nowrap;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+            box-shadow:
+                0 18px 45px rgba(56, 189, 248, 0.8),
+                0 0 0 1px rgba(56, 189, 248, 0.3);
+        }
+
+        button[type="submit"]:active {
+            transform: translateY(0);
+            box-shadow:
+                0 9px 20px rgba(56, 189, 248, 0.7),
+                0 0 0 0 rgba(56, 189, 248, 0.0);
+        }
+
+        @media (max-width: 420px) {
+            body {
+                padding: 16px;
+            }
+
+            .shell {
+                padding: 16px 14px 14px;
+            }
+
+            .row {
+                grid-template-columns: 1fr;
+            }
+
+            .submit-row {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+
+            button[type="submit"] {
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .screen {
+                padding: 12px 10px 10px;
+            }
+
+            .result {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="shell-inner">
+        <div class="shell-header">
+            <div class="dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="shell-title">
+                python · calc
+            </div>
+        </div>
+
+        <div class="device">
+            <div class="screen">
+                <div class="screen-label">
+                    <span>expression</span>
+                    <span class="pill">flask · backend</span>
+                </div>
+                <div class="expression" id="expression-display">
+                    <!-- Expression preview is built on client side -->
+                </div>
+                <div class="result">
+                    <span>result</span>
+                    {% if result is not none %}
+                        {{ "%.8g" | format(result) }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </div>
+                {% if error %}
+                    <div class="error">
+                        <span class="error-dot"></span>
+                        <span>{{ error }}</span>
+                    </div>
+                {% endif %}
+            </div>
+
+            <form method="post" id="calc-form">
+                <div class="row">
+                    <div class="field">
+                        <label for="a">First number</label>
+                        <div class="input-shell">
+                            <span>A</span>
+                            <input type="text" id="a" name="a" placeholder="e.g. 12.5" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="b">Second number</label>
+                        <div class="input-shell">
+                            <span>B</span>
+                            <input type="text" id="b" name="b" placeholder="e.g. 3,14" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field" style="margin-bottom: 4px;">
+                    <label for="op">Operation</label>
+                    <select id="op" name="op">
+                        <option value="+">Add (A + B)</option>
+                        <option value="-">Subtract (A − B)</option>
+                        <option value="*">Multiply (A × B)</option>
+                        <option value="/">Divide (A ÷ B)</option>
+                    </select>
+                </div>
+
+                <div class="submit-row">
+                    <div class="hint">
+                        Use <span>.</span> or <span>,</span> for decimals.
+                    </div>
+                    <button type="submit">
+                        Compute
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const aInput = document.getElementById('a');
+    const bInput = document.getElementById('b');
+    const opSelect = document.getElementById('op');
+    const expressionDisplay = document.getElementById('expression-display');
+
+    function updateExpression() {
+        const a = aInput.value.trim() || 'A';
+        const b = bInput.value.trim() || 'B';
+        const op = opSelect.value || '+';
+        expressionDisplay.textContent = `${a} ${op} ${b}`;
+    }
+
+    [aInput, bInput, opSelect].forEach(el => {
+        el.addEventListener('input', updateExpression);
+        el.addEventListener('change', updateExpression);
+    });
+
+    updateExpression();
+</script>
+</body>
+</html>
+
